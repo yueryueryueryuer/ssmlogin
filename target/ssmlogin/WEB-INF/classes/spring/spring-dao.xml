@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+ http://www.springframework.org/schema/beans/spring-beans.xsd
+ http://www.springframework.org/schema/context
+ http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!--配置数据库相关参数-->
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+
+    <!--数据库连接池的配置
+    数据库连接池可以让服务器预先与数据库建立部分连接，存入内存中，以减少连接数据库的耗时操作。
+    此处定义使用C3P0连接池的数据源。-->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+          destroy-method="close">
+        <property name="driverClass" value="${driver}"/>
+        <property name="jdbcUrl" value="${url}"/>
+        <property name="user" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+
+        <property name="maxPoolSize" value="30"/>
+        <property name="minPoolSize" value="2"/>
+        <property name="initialPoolSize" value="2"/>
+        <!-- 设置数据库连接池的连接的最大空闲时间,单位为秒 -->
+        <property name="maxIdleTime" value="10"/>
+    </bean>
+
+<!--
+    &lt;!&ndash;使用< context:component-scan>标签后，
+    spring可以自动去扫描base-pack下面或者子包下面的java文件，
+    如果扫描到有@Component @Controller@Service等这些注解的类，则把这些类注册为bean&ndash;&gt;
+    <context:component-scan base-package="com.zucc.ssmlogin.*">
+        &lt;!&ndash; 不扫描注解为controller的类型 &ndash;&gt;
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+    </context:component-scan>
+
+-->
+
+    <!--集成Mybatis
+SqlSessionFactoryBean是一个工厂bean，它的作用就是解析配置（数据源、别名等）。-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <!-- Mybatis的配置文件路径 -->
+        <property name="configLocation" value="classpath:mybatis-config.xml" />
+        <property name="mapperLocations" value="classpath:mapper/*.xml"/>
+    </bean>
+
+    <!--Mapper扫描配置
+    dao需要配置，如果数量大不适合一个个配置，需要使用mapper自动扫描来批量进行配置。-->
+
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <property name="basePackage" value="com.zucc.ssmlogin.dao"/>
+    </bean>
+    <!--Mybatis事务管理配置-->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+</beans>
